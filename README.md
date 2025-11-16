@@ -8,7 +8,7 @@ Context parroting is an informative baseline for time series foundation models. 
 
 + The directory `data` includes test datasets used for benchmarks.
 + The directory `demo` includes a minimal demo of the context parroting model.
-+ The directory `benchmark` includes the benchmarks used in the accompanying paper.
++ The directory `benchmark` includes notebooks for benchmarking the context parroting model and the baseline models.
 
 ## Datasets
 
