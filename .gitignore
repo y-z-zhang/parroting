@@ -5,6 +5,9 @@ __pycache__/
 
 # Datasets too large for GitHub
 
+# Third party files (retrieve these directly from the original repos)
+Dynamix*/*
+
 # Old files
 archive/
 OLD*
