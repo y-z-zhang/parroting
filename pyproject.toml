@@ -11,6 +11,7 @@ dependencies = [
     "ipython>=9.7.0",
     "jupyter>=1.1.1",
     "matplotlib>=3.10.7",
+    "numba>=0.62.1",
     "numpy>=2.3.4",
     "safetensors>=0.6.2",
     "scikit-learn>=1.7.2",
