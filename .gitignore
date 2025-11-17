@@ -5,8 +5,10 @@ __pycache__/
 
 # Datasets too large for GitHub
 
-# Third party files (retrieve these directly from the original repos)
+# Third party benchmark files (retrieve these directly from the original repos)
 Dynamix*/*
+uni2ts/*
+panda/*
 
 # Old files
 archive/
