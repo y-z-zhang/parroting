@@ -368,6 +368,12 @@ wheels = [
 ]
 
 [[package]]
+name = "chronos"
+version = "0.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f7/96/a7a16dbd78230b071a23efd8e4c28bd45819c340f9db84b890dd8c3ff11d/chronos-0.3.zip", hash = "sha256:d41100d4b4dfe22bd0df08d87de6962da2a5ee70321fbe548d8a22fc7d4fd5ed", size = 10858, upload-time = "2015-05-01T17:17:00.402Z" }
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -547,15 +553,11 @@ wheels = [
 [[package]]
 name = "dysts"
 version = "0.95"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/GilpinLab/dysts#ca0e92f8c2af52684669dd32002893eec4623ab2" }
 dependencies = [
     { name = "numpy" },
     { name = "scipy" },
     { name = "tqdm" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/fe/54/967afdd89caa6aaff942d1cb9731f084e522fd42686b14ab0b7ad075f912/dysts-0.95.tar.gz", hash = "sha256:d0e7770c2d447fd4bf3f525c5d69bf7cab8e7ff93e1607a0b8707747f0034727", size = 25402939, upload-time = "2024-09-20T19:39:08.572Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a2/10/eadf433dbaf0307ec49d66a880072dc52e947c168c766291dfbf4eba235c/dysts-0.95-py3-none-any.whl", hash = "sha256:5b3f6854d6611d784a2e51ebf4bcea8d3966f1f9a975384377c317418d9c1e57", size = 25398977, upload-time = "2024-09-20T19:39:03.294Z" },
 ]
 
 [[package]]
@@ -2002,6 +2004,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "accelerate" },
+    { name = "chronos" },
     { name = "datasets" },
     { name = "dysts" },
     { name = "einops" },
@@ -2030,8 +2033,9 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "accelerate", specifier = ">=1.11.0" },
+    { name = "chronos", specifier = ">=0.3" },
     { name = "datasets", specifier = ">=4.4.1" },
-    { name = "dysts", specifier = ">=0.95" },
+    { name = "dysts", git = "https://github.com/GilpinLab/dysts" },
     { name = "einops", specifier = ">=0.8.1" },
     { name = "gluonts", extras = ["arrow"], specifier = ">=0.16.2" },
     { name = "huggingface-hub", specifier = ">=0.36.0" },
