@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "accelerate>=1.11.0",
-    "chronos>=0.3",
+    "chronos-forecasting>=2.0.1",
     "datasets>=4.4.1",
     "dysts>=0.95",
     "einops>=0.8.1",
