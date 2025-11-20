@@ -582,6 +582,19 @@ wheels = [
 ]
 
 [[package]]
+name = "degas"
+version = "0.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "matplotlib" },
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ad/4c/6dd73a055d054222016b38da5fa0829bbf75a647e57074a1a23b047121a9/degas-0.0.0.tar.gz", hash = "sha256:0f9372d6099f779f6ef32eaf325070f904b60fa28f8b86a239f5303aaeea2dac", size = 15059, upload-time = "2024-07-04T06:51:04.624Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c4/5d/75af1e3796fa0e53d8abec774daf967016113dfe9b417b2deaefd2821b99/degas-0.0.0-py3-none-any.whl", hash = "sha256:583e54c8baefcce10362118477d9b77c610a1250ca0fdb173e8d5ea71a8690a9", size = 14859, upload-time = "2024-07-04T06:51:02.626Z" },
+]
+
+[[package]]
 name = "dill"
 version = "0.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2055,6 +2068,7 @@ dependencies = [
     { name = "accelerate" },
     { name = "chronos-forecasting" },
     { name = "datasets" },
+    { name = "degas" },
     { name = "dysts" },
     { name = "einops" },
     { name = "gluonts", extra = ["arrow"] },
@@ -2084,6 +2098,7 @@ requires-dist = [
     { name = "accelerate", specifier = ">=1.11.0" },
     { name = "chronos-forecasting", specifier = ">=2.0.1" },
     { name = "datasets", specifier = ">=4.4.1" },
+    { name = "degas", specifier = ">=0.0.0" },
     { name = "dysts", git = "https://github.com/GilpinLab/dysts" },
     { name = "einops", specifier = ">=0.8.1" },
     { name = "gluonts", extras = ["arrow"], specifier = ">=0.16.2" },
