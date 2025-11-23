@@ -14,6 +14,9 @@ panda/*
 archive/
 OLD*
 
+# Large data dumps/forecast dumps
+fig_resources/*
+
 # C extensions
 *.so
 
