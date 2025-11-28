@@ -14,6 +14,7 @@ benchmark/panda/
 # Old files
 archive/
 OLD*
+private_*
 
 # Large data dumps/forecast dumps
 analysis/fig_resources/
