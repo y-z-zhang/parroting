@@ -15,6 +15,7 @@ benchmark/panda/
 archive/
 OLD*
 private_*
+private_parroting/
 
 # Large data dumps/forecast dumps
 analysis/fig_resources/
