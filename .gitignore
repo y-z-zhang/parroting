@@ -10,6 +10,7 @@ __pycache__/
 benchmark/Dynamix/
 benchmark/uni2ts/
 benchmark/panda/
+benchmark/timesfm/
 
 # Old files
 archive/
