@@ -1,23 +1,17 @@
 import numpy as np
 from dysts.metrics import smape
 
-# def smape_rolling(ts1, ts2):
-#     """Return the smape versus time for two time series."""
-#     n = min(ts1.shape[0], ts2.shape[0])
-#     all_smape = list()
-#     for i in range(n):
-#         smape_val = smape(ts1[:i], ts2[:i])
-#         all_smape.append(smape_val)
-#     return np.array(all_smape)
+def _rolling_apply(ts1, ts2, metric_fn):
+    """Apply a metric on increasing prefixes of two time series."""
+    n = min(ts1.shape[0], ts2.shape[0])
+    if n <= 0:
+        return np.array([])
+    return np.array([metric_fn(ts1[:i], ts2[:i]) for i in range(1, n + 1)])
+
 
 def smape_rolling(ts1, ts2):
     """Return the smape versus time for two time series."""
-    n = min(ts1.shape[0], ts2.shape[0])
-    all_smape = list()
-    for i in range(1, n+1):
-        smape_val = smape(ts1[:i], ts2[:i])
-        all_smape.append(smape_val)
-    return np.array(all_smape)
+    return _rolling_apply(ts1, ts2, smape)
 
 def vpt(arr, threshold=30):
     """
@@ -52,8 +46,7 @@ def mse(x, xhat):
     Returns:
         float: The MSE.
     """
-    return np.sum((x - xhat) ** 2)
-    #return np.mean((x - xhat) ** 2)
+    return np.mean((x - xhat) ** 2)
 
 def nrmse(x, xhat):
     """
@@ -73,30 +66,15 @@ def nrmse(x, xhat):
 
 def horizoned_mse(x, xhat):
     """Given a horizoned forecast and ground truth, compute the NRMSE as a function of time"""
-    nt = min(x.shape[0], xhat.shape[0])
-    mse_vals = list()
-    for i in range(1, nt+1):
-        mse_vals.append(mse(x[:i], xhat[:i]))
-    mse_vals = np.array(mse_vals)
-    return mse_vals
+    return _rolling_apply(x, xhat, mse)
 
 def horizoned_nrmse(x, xhat):
     """Given a horizoned forecast and ground truth, compute the NRMSE as a function of time"""
-    nt = min(x.shape[0], xhat.shape[0])
-    nrmse_vals = list()
-    for i in range(1, nt+1):
-        nrmse_vals.append(nrmse(x[:i], xhat[:i]))
-    nrmse_vals = np.array(nrmse_vals)
-    return nrmse_vals
+    return _rolling_apply(x, xhat, nrmse)
 
 def horizoned_smape(x, xhat):
     """Given a horizoned forecast and ground truth, compute the SMAPE as a function of time"""
-    nt = min(x.shape[0], xhat.shape[0])
-    smape_vals = list()
-    for i in range(1, nt+1):
-        smape_vals.append(smape(x[:i], xhat[:i]))
-    smape_vals = np.array(smape_vals)
-    return smape_vals
+    return _rolling_apply(x, xhat, smape)
 
 def vpt_smape(x, xhat, threshold=30):
     """
@@ -157,3 +135,13 @@ def vpt_nrmse(x, xhat, threshold=0.5):
     else:
         tind = exceed_times[0]
     return tind
+
+def mse_rolling(ts1, ts2):
+    return _rolling_apply(ts1, ts2, mse)
+
+def mae(y_true, y_pred):
+    mae = np.mean(np.abs(y_true - y_pred))
+    return mae
+
+def mae_rolling(ts1, ts2):
+    return _rolling_apply(ts1, ts2, mae)
