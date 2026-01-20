@@ -163,7 +163,7 @@ def main():
     trajectory_glob = "../data/long_trajectories/*.npy"
 
     for model_name in list_models():
-        output_dir = f"../analysis/{model_name}_statistics"
+        output_dir = f"./benchmark_results/{model_name}_dysts"
         run_model_benchmarks(
             model_name=model_name,
             trajectory_glob=trajectory_glob,
