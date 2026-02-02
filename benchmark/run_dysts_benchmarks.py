@@ -77,8 +77,9 @@ def run_model_benchmarks(
 ):
     stats = _init_stats()
     model = create_model(model_name)
-
-    for trajectory in sorted(glob.glob(trajectory_glob)):
+    
+    ## FLAG: only running on the first 5 trajectories for testing purposes
+    for trajectory in sorted(glob.glob(trajectory_glob))[:5]:
         equation_name = os.path.basename(trajectory).split(".")[0]
         print(f"{model_name}: {equation_name}", flush=True)
 
@@ -150,8 +151,11 @@ def run_model_benchmarks(
             print(f"{model_name}: skipping {equation_name}", flush=True)
             continue
 
-    _save_stats(output_dir, stats)
+        _save_stats(output_dir, stats)
 
+## Get the current directory
+current_dir = os.path.dirname(os.path.abspath(__file__))
+root_dir = os.path.dirname(current_dir)
 
 def main():
     granularity = 30
@@ -160,10 +164,11 @@ def main():
     rolling_window = context_lengths[-1]
     num_ic = 20
 
-    trajectory_glob = "../data/long_trajectories/*.npy"
+    trajectory_glob = os.path.join(root_dir, "data", "long_trajectories", "*.npy")
 
     for model_name in list_models():
-        output_dir = f"./benchmark_results/{model_name}_dysts"
+        print(f"Running benchmarks for {model_name}", flush=True)
+        output_dir = os.path.join(current_dir, "benchmark_results", f"{model_name}_dysts")
         run_model_benchmarks(
             model_name=model_name,
             trajectory_glob=trajectory_glob,

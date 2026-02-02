@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 from typing import Any, Callable, Dict, Iterable, Optional, Type
 
 import numpy as np
@@ -20,6 +21,11 @@ class ForecastModel:
 
     def __call__(self, context: np.ndarray, horizon: int) -> np.ndarray:
         return self.forecast(context, horizon)
+
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 
 def _to_numpy(array: Any) -> np.ndarray:
@@ -412,16 +418,16 @@ class PandaPatchTSTModel(ForecastModel):
 
 
 MODEL_REGISTRY: Dict[str, Type[ForecastModel]] = {
-    DynaMixModel.name: DynaMixModel,
-    ChronosModel.name: ChronosModel,
-    ChronosBoltModel.name: ChronosBoltModel,
-    TimesFMModel.name: TimesFMModel,
+    # DynaMixModel.name: DynaMixModel, # working
+    # ChronosModel.name: ChronosModel,
+    # ChronosBoltModel.name: ChronosBoltModel,
+    # TimesFMModel.name: TimesFMModel, # not working
     TimeMoEModel.name: TimeMoEModel,
-    Moirai2Model.name: Moirai2Model,
-    ParrotModel.name: ParrotModel,
-    SimplexModel.name: SimplexModel,
-    ARIMAModel.name: ARIMAModel,
-    PandaPatchTSTModel.name: PandaPatchTSTModel,
+    # Moirai2Model.name: Moirai2Model, # working
+    # ParrotModel.name: ParrotModel, # working
+    # SimplexModel.name: SimplexModel, # working
+    # ARIMAModel.name: ARIMAModel, # working
+    # PandaPatchTSTModel.name: PandaPatchTSTModel,
 }
 
 
