@@ -18,6 +18,10 @@ OLD*
 private_*
 private_parroting/
 
+# Log files
+*.log
+*.err
+
 # Large data dumps/forecast dumps
 analysis/fig_resources/
 fig_resources/*

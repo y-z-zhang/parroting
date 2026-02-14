@@ -83,12 +83,27 @@ def run_model_benchmarks(
         print(f"{model_name}: skipping (failed to load: {e})", flush=True)
         return
     
-    ## FLAG: only running on the first 5 trajectories for testing purposes
     for trajectory in sorted(glob.glob(trajectory_glob)):
         equation_name = os.path.basename(trajectory).split(".")[0]
         print(f"{model_name}: {equation_name}", flush=True)
 
         traj = np.load(trajectory, allow_pickle=True)
+        if not isinstance(traj, np.ndarray):
+            print(
+                f"{model_name}: skipping {equation_name} (not a numpy array: "
+                f"{type(traj).__name__})",
+                flush=True,
+            )
+            continue
+        if traj.ndim == 0 or traj.size == 0:
+            print(
+                f"{model_name}: skipping {equation_name} "
+                f"(invalid trajectory: ndim={traj.ndim}, size={traj.size})",
+                flush=True,
+            )
+            continue
+        if traj.ndim == 1:
+            traj = traj[:, None]
         std_val = np.std(traj, axis=0)
         if np.any(std_val == 0):
             warnings.warn(f"Warning: std is 0 for {equation_name}", RuntimeWarning)
@@ -141,8 +156,14 @@ def run_model_benchmarks(
                             kl_dist = np.nan
                         metrics["kl"].append(kl_dist)
 
-                        cdim_pred = gp_dim(traj_pred_full)
-                        cdim_true = gp_dim(traj_true)
+                        with warnings.catch_warnings():
+                            warnings.filterwarnings(
+                                "ignore",
+                                category=RuntimeWarning,
+                                module="scipy",
+                            )
+                            cdim_pred = gp_dim(traj_pred_full)
+                            cdim_true = gp_dim(traj_true)
                         metrics["cdim"].append(np.array([cdim_pred, cdim_true]))
 
                 key = (equation_name, context_length)
