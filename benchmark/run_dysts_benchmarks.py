@@ -175,10 +175,10 @@ def main():
     num_ic = 20
 
     ## Original trajectory directory
-    trajectory_glob = os.path.join(root_dir, "data", "long_trajectories", "*.npy")
+    # trajectory_glob = os.path.join(root_dir, "data", "long_trajectories", "*.npy")
 
     ## Higher resolution trajectory directory
-    # trajectory_glob = os.path.join(root_dir, "data", "good_trajectories", "*.npy")
+    trajectory_glob = os.path.join(root_dir, "data", "good_trajectories", "*.npy")
 
     for model_name in list_models():
         print(f"Running benchmarks for {model_name}", flush=True)
