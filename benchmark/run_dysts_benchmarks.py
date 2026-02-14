@@ -1,6 +1,7 @@
 import glob
 import os
 from typing import Dict, Iterable
+import warnings
 
 import numpy as np
 from dysts.analysis import gp_dim
@@ -76,15 +77,23 @@ def run_model_benchmarks(
     output_dir: str,
 ):
     stats = _init_stats()
-    model = create_model(model_name)
+    try:
+        model = create_model(model_name)
+    except (ImportError, OSError) as e:
+        print(f"{model_name}: skipping (failed to load: {e})", flush=True)
+        return
     
     ## FLAG: only running on the first 5 trajectories for testing purposes
-    for trajectory in sorted(glob.glob(trajectory_glob))[:5]:
+    for trajectory in sorted(glob.glob(trajectory_glob)):
         equation_name = os.path.basename(trajectory).split(".")[0]
         print(f"{model_name}: {equation_name}", flush=True)
 
         traj = np.load(trajectory, allow_pickle=True)
-        traj = (traj - np.mean(traj, axis=0)) / np.std(traj, axis=0)
+        std_val = np.std(traj, axis=0)
+        if np.any(std_val == 0):
+            warnings.warn(f"Warning: std is 0 for {equation_name}", RuntimeWarning)
+            std_val[std_val == 0] = 1
+        traj = (traj - np.mean(traj, axis=0)) / std_val
 
         try:
             for context_length in context_lengths:
@@ -147,7 +156,8 @@ def run_model_benchmarks(
                 _store_metric(stats, "mae", key, metrics["mae"], axis=0)
 
         except Exception as exc:
-            print(exc)
+            print("Exception encountered:", flush=True)
+            print(exc, flush=True)
             print(f"{model_name}: skipping {equation_name}", flush=True)
             continue
 
@@ -164,7 +174,11 @@ def main():
     rolling_window = context_lengths[-1]
     num_ic = 20
 
+    ## Original trajectory directory
     trajectory_glob = os.path.join(root_dir, "data", "long_trajectories", "*.npy")
+
+    ## Higher resolution trajectory directory
+    # trajectory_glob = os.path.join(root_dir, "data", "good_trajectories", "*.npy")
 
     for model_name in list_models():
         print(f"Running benchmarks for {model_name}", flush=True)

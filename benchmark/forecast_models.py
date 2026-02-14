@@ -130,16 +130,24 @@ class ChronosModel(ForecastModel):
         self._limit_prediction_length = limit_prediction_length
 
     def _predict_univariate(self, series: np.ndarray, horizon: int) -> np.ndarray:
+        x = self._torch.tensor(series, dtype=self._torch.float32)
+
+        # IMPORTANT: pass context as positional arg (no context=)
         forecast = self._pipeline.predict(
-            context=self._torch.tensor(series, dtype=self._torch.float32),
+            x,
             prediction_length=horizon,
             num_samples=self._num_samples,
             limit_prediction_length=self._limit_prediction_length,
         )
-        samples = _to_numpy(forecast[0])
-        if samples.ndim == 1:
-            return samples
-        return samples.mean(axis=0)
+
+        arr = _to_numpy(forecast[0])
+
+        # Chronos (original): (num_samples, H) -> sample mean
+        if arr.ndim == 2:
+            return arr.mean(axis=0)
+
+        # If a pipeline ever returns (H,) directly:
+        return arr
 
     def forecast(self, context: np.ndarray, horizon: int) -> np.ndarray:
         _validate_horizon(horizon)
@@ -166,47 +174,89 @@ class ChronosBoltModel(ChronosModel):
             limit_prediction_length=limit_prediction_length,
         )
 
+    def _predict_univariate(self, series: np.ndarray, horizon: int) -> np.ndarray:
+        x = self._torch.tensor(series, dtype=self._torch.float32)
+
+        # Bolt predict() returns quantiles: (num_quantiles, H); pick q=0.5 if available
+        forecast = self._pipeline.predict(x, prediction_length=horizon)
+        arr = _to_numpy(forecast[0])
+
+        if arr.ndim == 2 and hasattr(self._pipeline, "quantiles"):
+            qs = list(getattr(self._pipeline, "quantiles"))
+            if 0.5 in qs:
+                return arr[qs.index(0.5)]
+        # fallback: if quantiles metadata missing, take middle quantile
+        if arr.ndim == 2:
+            return arr[arr.shape[0] // 2]
+
+        return arr
+
+
 
 class TimesFMModel(ForecastModel):
+    """TimesFM 2.5 model using the torch API."""
+
     name = "timesfm"
 
     def __init__(
         self,
-        horizon_len: int = 300,
-        context_len: int = 2048,
-        per_core_batch_size: int = 32,
-        backend: str = "cpu",
-        num_layers: int = 50,
-        use_positional_embedding: bool = False,
-        checkpoint_repo_id: str = "google/timesfm-2.0-500m-pytorch",
+        checkpoint_repo_id: str = "google/timesfm-2.5-200m-pytorch",
+        max_context: int = 2048,
+        max_horizon: int = 300,
+        normalize_inputs: bool = True,
+        use_continuous_quantile_head: bool = True,
+        force_flip_invariance: bool = True,
+        infer_is_positive: bool = True,
+        fix_quantile_crossing: bool = True,
     ) -> None:
+        import torch
         import timesfm
 
-        self._horizon_len = horizon_len
-        hparams = timesfm.TimesFmHparams(
-            backend=backend,
-            per_core_batch_size=per_core_batch_size,
-            horizon_len=horizon_len,
-            num_layers=num_layers,
-            use_positional_embedding=use_positional_embedding,
-            context_len=context_len,
+        torch.set_float32_matmul_precision("high")
+        TimesFM_2p5_200M_torch = getattr(
+            timesfm, "TimesFM_2p5_200M_torch", None
         )
-        checkpoint = timesfm.TimesFmCheckpoint(huggingface_repo_id=checkpoint_repo_id)
-        self._model = timesfm.TimesFm(hparams=hparams, checkpoint=checkpoint)
+        if TimesFM_2p5_200M_torch is None:
+            try:
+                from timesfm.timesfm_2p5 import timesfm_2p5_torch
+
+                TimesFM_2p5_200M_torch = timesfm_2p5_torch.TimesFM_2p5_200M_torch
+            except ImportError as e:
+                raise ImportError(
+                    "TimesFM 2.5 torch model is not available. "
+                    "Install timesfm with torch support: pip install 'timesfm[torch]' "
+                    "or ensure torch is installed before timesfm."
+                ) from e
+        self._model = TimesFM_2p5_200M_torch.from_pretrained(checkpoint_repo_id)
+        self._model.compile(
+            timesfm.ForecastConfig(
+                max_context=max_context,
+                max_horizon=max_horizon,
+                normalize_inputs=normalize_inputs,
+                use_continuous_quantile_head=use_continuous_quantile_head,
+                force_flip_invariance=force_flip_invariance,
+                infer_is_positive=infer_is_positive,
+                fix_quantile_crossing=fix_quantile_crossing,
+            )
+        )
+        self._max_horizon = max_horizon
 
     def forecast(self, context: np.ndarray, horizon: int) -> np.ndarray:
         _validate_horizon(horizon)
-        context_2d = _ensure_2d(context)
-        point_forecast, _ = self._model.forecast(context_2d.T)
-        preds = _to_numpy(point_forecast).T
-        if horizon > self._horizon_len:
+        if horizon > self._max_horizon:
             raise ValueError(
-                f"TimesFM configured for horizon_len={self._horizon_len}, got {horizon}"
+                f"TimesFM configured for max_horizon={self._max_horizon}, got {horizon}"
             )
+        context_2d = _ensure_2d(context)
+        inputs = [context_2d[:, c] for c in range(context_2d.shape[1])]
+        point_forecast, _ = self._model.forecast(horizon=horizon, inputs=inputs)
+        preds = _to_numpy(point_forecast).T
         return preds[:horizon]
 
 
 class TimeMoEModel(ForecastModel):
+    """TimeMoE requires transformers==4.40.1; newer versions remove APIs it depends on."""
+
     name = "timemoe"
 
     def __init__(
@@ -217,6 +267,16 @@ class TimeMoEModel(ForecastModel):
         trust_remote_code: bool = True,
     ) -> None:
         import torch
+        from packaging import version
+
+        import transformers
+
+        # if version.parse(transformers.__version__) > version.parse("4.40.1"):
+        #     raise ImportError(
+        #         f"TimeMoE requires transformers==4.40.1. "
+        #         f"Current: {transformers.__version__}. "
+        #         "Install with: pip install 'transformers==4.40.1'"
+        #     )
         from transformers import AutoModelForCausalLM
 
         dtype = getattr(torch, torch_dtype) if torch_dtype else None
@@ -227,6 +287,8 @@ class TimeMoEModel(ForecastModel):
             torch_dtype=dtype,
             trust_remote_code=trust_remote_code,
         )
+        # Avoid DynamicCache.seen_tokens AttributeError with transformers >= 4.41
+        self._model.config.use_cache = False
 
     def forecast(self, context: np.ndarray, horizon: int) -> np.ndarray:
         _validate_horizon(horizon)
@@ -234,7 +296,9 @@ class TimeMoEModel(ForecastModel):
         context_tensor = self._torch.tensor(
             context_2d.T, dtype=self._torch.float32, device=self._model.device
         )
-        output = self._model.generate(context_tensor, max_new_tokens=horizon)
+        output = self._model.generate(
+            context_tensor, max_new_tokens=horizon, use_cache=False
+        )
         forecast = output[:, -horizon:]
         return _to_numpy(forecast).T
 
@@ -410,6 +474,7 @@ class PandaPatchTSTModel(ForecastModel):
             sliding_context=self._sliding_context,
         )
         pred_np = _to_numpy(pred)
+        pred_np = pred_np.squeeze()
         if pred_np.ndim == 3 and pred_np.shape[0] == 1:
             pred_np = pred_np[0]
         if pred_np.ndim == 1:
@@ -419,15 +484,15 @@ class PandaPatchTSTModel(ForecastModel):
 
 MODEL_REGISTRY: Dict[str, Type[ForecastModel]] = {
     # DynaMixModel.name: DynaMixModel, # working
-    # ChronosModel.name: ChronosModel,
-    # ChronosBoltModel.name: ChronosBoltModel,
-    # TimesFMModel.name: TimesFMModel, # not working
-    TimeMoEModel.name: TimeMoEModel,
+    # ChronosModel.name: ChronosModel, # too slow
+    # ChronosBoltModel.name: ChronosBoltModel, # too slow
+    TimesFMModel.name: TimesFMModel,
+    # TimeMoEModel.name: TimeMoEModel, # not working
     # Moirai2Model.name: Moirai2Model, # working
     # ParrotModel.name: ParrotModel, # working
     # SimplexModel.name: SimplexModel, # working
     # ARIMAModel.name: ARIMAModel, # working
-    # PandaPatchTSTModel.name: PandaPatchTSTModel,
+    # PandaPatchTSTModel.name: PandaPatchTSTModel, # working
 }
 
 
