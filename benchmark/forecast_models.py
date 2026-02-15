@@ -490,9 +490,9 @@ MODEL_REGISTRY: Dict[str, Type[ForecastModel]] = {
     # TimeMoEModel.name: TimeMoEModel, # not working
     # Moirai2Model.name: Moirai2Model, # working
     # ParrotModel.name: ParrotModel, # working
-    # SimplexModel.name: SimplexModel, # working
+    SimplexModel.name: SimplexModel, # working
     # ARIMAModel.name: ARIMAModel, # working
-    PandaPatchTSTModel.name: PandaPatchTSTModel, # working
+    # PandaPatchTSTModel.name: PandaPatchTSTModel, # working
 }
 
 
