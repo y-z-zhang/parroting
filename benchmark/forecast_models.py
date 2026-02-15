@@ -359,7 +359,7 @@ class Moirai2Model(ForecastModel):
 class ParrotModel(ForecastModel):
     name = "parrot"
 
-    def __init__(self, D: int = 30, tau: int = 1) -> None:
+    def __init__(self, D: int = 10, tau: int = 1) -> None:
         from models.parrot import context_parroting_forecast
 
         self._D = D
