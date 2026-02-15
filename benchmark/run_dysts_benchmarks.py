@@ -1,3 +1,4 @@
+import argparse
 import glob
 import os
 from typing import Dict, Iterable
@@ -188,20 +189,51 @@ def run_model_benchmarks(
 current_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.dirname(current_dir)
 
+def _parse_args():
+    available = list(list_models())
+    parser = argparse.ArgumentParser(
+        description="Run DYSTS benchmarks for forecast models.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=f"Available models: {', '.join(available)}",
+    )
+    parser.add_argument(
+        "models",
+        nargs="*",
+        default=None,
+        metavar="MODEL",
+        help=f"Models to benchmark. If omitted, all models are run. Available: {', '.join(available)}",
+    )
+    return parser.parse_args()
+
+
 def main():
+    args = _parse_args()
+    available = set(m.lower() for m in list_models())
+
+    if args.models:
+        models_to_run = []
+        for m in args.models:
+            key = m.lower()
+            if key not in available:
+                raise SystemExit(
+                    f"Unknown model '{m}'. Available: {', '.join(sorted(available))}"
+                )
+            models_to_run.append(key)
+    else:
+        models_to_run = sorted(available)
+
     granularity = 30
     context_lengths = 2 ** np.arange(6, 11)
     forecast_length = 300
     rolling_window = context_lengths[-1]
     num_ic = 20
 
-    ## Original trajectory directory
+    ## Older trajectory directory
     # trajectory_glob = os.path.join(root_dir, "data", "long_trajectories", "*.npy")
-
     ## Higher resolution trajectory directory
     trajectory_glob = os.path.join(root_dir, "data", "good_trajectories", "*.npy")
 
-    for model_name in list_models():
+    for model_name in models_to_run:
         print(f"Running benchmarks for {model_name}", flush=True)
         output_dir = os.path.join(current_dir, "benchmark_results", f"{model_name}_dysts")
         run_model_benchmarks(

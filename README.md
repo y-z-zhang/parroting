@@ -20,13 +20,19 @@ Context parroting is an informative baseline for time series foundation models. 
 
 To run the benchmarks, use the following command:
 ```bash
+# Run all models
   python benchmark/run_dysts_benchmarks.py
+
+# Run specific models only
+  python benchmark/run_dysts_benchmarks.py chronos timemoe
 ```
-or, using `uv`
+This will run the benchmarks for all or a subset of the models in the `forecast_models.py` file. The results will be saved in the `benchmark/benchmark_results` directory. Plot the existing benchmark results for all the models in the `benchmark/benchmark_plotting.ipynb` notebook.
+
+The benchmarks can also be run using `uv`, which recommended due to the many dependencies of the different models.
 ```bash
   uv run python benchmark/run_dysts_benchmarks.py
 ```
-This will run the benchmarks for all the models in the `forecast_models.py` file. The results will be saved in the `benchmark/benchmark_results` directory. Plot the existing benchmark results for all the models in the `benchmark/benchmark_plotting.ipynb` notebook.
+
 
 ## Reference
 
