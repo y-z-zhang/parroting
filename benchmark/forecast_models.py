@@ -483,16 +483,16 @@ class PandaPatchTSTModel(ForecastModel):
 
 
 MODEL_REGISTRY: Dict[str, Type[ForecastModel]] = {
-    # DynaMixModel.name: DynaMixModel, # working
-    # ChronosModel.name: ChronosModel, # too slow
-    # ChronosBoltModel.name: ChronosBoltModel, # too slow
+    # DynaMixModel.name: DynaMixModel,
+    ChronosModel.name: ChronosModel, # slow
+    ChronosBoltModel.name: ChronosBoltModel, # slow
     # TimesFMModel.name: TimesFMModel,
-    # TimeMoEModel.name: TimeMoEModel, # not working
-    # Moirai2Model.name: Moirai2Model, # working
-    # ParrotModel.name: ParrotModel, # working
-    SimplexModel.name: SimplexModel, # working
-    # ARIMAModel.name: ARIMAModel, # working
-    # PandaPatchTSTModel.name: PandaPatchTSTModel, # working
+    # TimeMoEModel.name: TimeMoEModel, # This model needs old transformers version
+    # Moirai2Model.name: Moirai2Model,
+    # ParrotModel.name: ParrotModel,
+    # SimplexModel.name: SimplexModel,
+    # ARIMAModel.name: ARIMAModel
+    # PandaPatchTSTModel.name: PandaPatchTSTModel,
 }
 
 

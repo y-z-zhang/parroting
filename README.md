@@ -26,17 +26,17 @@ or, using `uv`
 ```bash
   uv run python benchmark/run_dysts_benchmarks.py
 ```
-This will run the benchmarks for all the models in the `forecast_models.py` file. The results will be saved in the `benchmark/benchmark_results` directory. Plot the benchmarks for all the models in the `benchmark/benchmark_plotting.ipynb` notebook.
+This will run the benchmarks for all the models in the `forecast_models.py` file. The results will be saved in the `benchmark/benchmark_results` directory. Plot the existing benchmark results for all the models in the `benchmark/benchmark_plotting.ipynb` notebook.
 
 ## Reference
 
 Information about the experiments can be found in the accompanying paper.
 
 ```bibtex
-@inproceedings{parroting2026,
+@inproceedings{zhang2026context,
   title={Context parroting: A simple but tough-to-beat baseline for foundation models in scientific machine learning},
   author={Yuanzhao Zhang and William Gilpin},
-  booktitle={International Conference on Learning Representations},
+  booktitle={The Fourteenth International Conference on Learning Representations},
   year={2026}
 }
 ```
