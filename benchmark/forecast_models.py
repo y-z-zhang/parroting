@@ -73,13 +73,15 @@ class DynaMixModel(ForecastModel):
     ) -> None:
         dynamix_root = Path(__file__).resolve().parent / "DynaMix"
         if dynamix_root.exists():
-            sys_path = str(dynamix_root)
-            if sys_path not in _get_sys_path():
-                _get_sys_path().append(sys_path)
+            # current DynaMix-python layout: src/dynamix/...
+            for sub in ("src", ""):
+                p = str(dynamix_root / sub) if sub else str(dynamix_root)
+                if p not in _get_sys_path():
+                    _get_sys_path().append(p)
 
         import torch
-        from src.model.forecaster import DynaMixForecaster
-        from src.utilities.utilities import load_hf_model
+        from dynamix.model.forecaster import DynaMixForecaster
+        from dynamix.utilities.utilities import load_hf_model
 
         self._torch = torch
         self._standardize = standardize
