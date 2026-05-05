@@ -11,8 +11,9 @@ import warnings
 import numpy as np
 import torch
 
-REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(REPO, "benchmark"))
+BENCHMARK_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPO = os.path.dirname(BENCHMARK_DIR)
+sys.path.insert(0, BENCHMARK_DIR)
 
 from dysts.metrics import estimate_kl_divergence
 from dysts.analysis import gp_dim

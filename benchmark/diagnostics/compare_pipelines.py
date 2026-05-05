@@ -12,8 +12,9 @@ import warnings
 import numpy as np
 import torch
 
-REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(REPO, "benchmark"))
+BENCHMARK_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPO = os.path.dirname(BENCHMARK_DIR)
+sys.path.insert(0, BENCHMARK_DIR)
 
 from dysts.metrics import smape, estimate_kl_divergence
 from dysts.analysis import gp_dim
@@ -222,7 +223,7 @@ def main():
         print(f"  same-IC prediction max|nb-script| = {diff:.3e}  "
               f"(notebook[0:5]={p_nb[:5]}, script[0:5]={p_sc[:5]})")
 
-    out_path = os.path.join(os.path.dirname(__file__), "_diag_compare_results.npz")
+    out_path = os.path.join(os.path.dirname(__file__), "compare_pipelines_results.npz")
     np.savez(out_path, summary=np.array(summary, dtype=object))
     print(f"\nSaved: {out_path}")
 

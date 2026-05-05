@@ -22,6 +22,9 @@ private_parroting/
 *.log
 *.err
 
+# Diagnostic outputs (regeneratable)
+benchmark/diagnostics/*_results.npz
+
 # Large data dumps/forecast dumps
 analysis/fig_resources/
 fig_resources/*
