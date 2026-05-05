@@ -194,9 +194,60 @@ class ChronosBoltModel(ChronosModel):
 
 
 class TimesFMModel(ForecastModel):
-    """TimesFM 2.5 model using the torch API."""
+    """TimesFM 2.0 (500M) — the version reported in the paper.
+
+    Uses the legacy ``timesfm.TimesFm`` API with ``TimesFmHparams`` and
+    ``TimesFmCheckpoint``. The 2.5 (200M) variant is exposed under the
+    ``timesfm_2p5`` model name.
+    """
 
     name = "timesfm"
+
+    def __init__(
+        self,
+        huggingface_repo_id: str = "google/timesfm-2.0-500m-pytorch",
+        backend: str = "cpu",
+        per_core_batch_size: int = 32,
+        horizon_len: int = 300,
+        num_layers: int = 50,
+        context_len: int = 2048,
+        use_positional_embedding: bool = False,
+    ) -> None:
+        import timesfm
+
+        self._model = timesfm.TimesFm(
+            hparams=timesfm.TimesFmHparams(
+                backend=backend,
+                per_core_batch_size=per_core_batch_size,
+                horizon_len=horizon_len,
+                num_layers=num_layers,
+                use_positional_embedding=use_positional_embedding,
+                context_len=context_len,
+            ),
+            checkpoint=timesfm.TimesFmCheckpoint(
+                huggingface_repo_id=huggingface_repo_id,
+            ),
+        )
+        self._max_horizon = horizon_len
+
+    def forecast(self, context: np.ndarray, horizon: int) -> np.ndarray:
+        _validate_horizon(horizon)
+        if horizon > self._max_horizon:
+            raise ValueError(
+                f"TimesFM configured for horizon_len={self._max_horizon}, got {horizon}"
+            )
+        context_2d = _ensure_2d(context)
+        # legacy API expects an iterable of (T,) series
+        inputs = context_2d.T  # shape (channels, T)
+        point_forecast, _ = self._model.forecast(inputs)
+        preds = _to_numpy(point_forecast).T  # (horizon_len, channels)
+        return preds[:horizon]
+
+
+class TimesFM2p5Model(ForecastModel):
+    """TimesFM 2.5 (200M) — newer version, kept for parity with the 2.5 API."""
+
+    name = "timesfm_2p5"
 
     def __init__(
         self,
@@ -486,7 +537,8 @@ MODEL_REGISTRY: Dict[str, Type[ForecastModel]] = {
     DynaMixModel.name: DynaMixModel,
     ChronosModel.name: ChronosModel, # slow
     ChronosBoltModel.name: ChronosBoltModel, # slow
-    TimesFMModel.name: TimesFMModel,
+    TimesFMModel.name: TimesFMModel,         # 2.0 (500M) — paper version
+    TimesFM2p5Model.name: TimesFM2p5Model,   # 2.5 (200M)
     TimeMoEModel.name: TimeMoEModel, # This model needs old transformers version
     Moirai2Model.name: Moirai2Model,
     ParrotModel.name: ParrotModel,

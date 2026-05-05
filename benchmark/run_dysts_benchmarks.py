@@ -210,6 +210,23 @@ def _parse_args():
         metavar="MODEL",
         help=f"Models to benchmark. If omitted, all models are run. Available: {', '.join(available)}",
     )
+    parser.add_argument(
+        "--context-lengths",
+        nargs="+", type=int, default=None,
+        help="Context lengths to evaluate (default: 64 128 256 512 1024).",
+    )
+    parser.add_argument(
+        "--num-ic", type=int, default=20,
+        help="Number of random initial conditions per (system, context_length).",
+    )
+    parser.add_argument(
+        "--seed", type=int, default=0,
+        help="Base RNG seed for IC sampling.",
+    )
+    parser.add_argument(
+        "--output-suffix", type=str, default="",
+        help="Suffix appended to each output dir name (e.g. '_CL512').",
+    )
     return parser.parse_args()
 
 
@@ -230,19 +247,23 @@ def main():
         models_to_run = sorted(available)
 
     granularity = 30
-    context_lengths = 2 ** np.arange(6, 11)
+    context_lengths = (
+        np.array(args.context_lengths) if args.context_lengths is not None
+        else 2 ** np.arange(6, 11)
+    )
     forecast_length = 300
-    num_ic = 20
-    seed = 0
+    num_ic = args.num_ic
+    seed = args.seed
 
     ## Older trajectory directory
     # trajectory_glob = os.path.join(root_dir, "data", "long_trajectories", "*.npy")
     ## Higher resolution trajectory directory
     trajectory_glob = os.path.join(root_dir, "data", "good_trajectories", "*.npy")
 
+    suffix = args.output_suffix
     for model_name in models_to_run:
         print(f"Running benchmarks for {model_name}", flush=True)
-        output_dir = os.path.join(current_dir, "benchmark_results", f"{model_name}_dysts")
+        output_dir = os.path.join(current_dir, "benchmark_results", f"{model_name}_dysts{suffix}")
         run_model_benchmarks(
             model_name=model_name,
             trajectory_glob=trajectory_glob,
