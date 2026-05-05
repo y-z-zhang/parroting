@@ -72,10 +72,10 @@ def run_model_benchmarks(
     trajectory_glob: str,
     context_lengths: np.ndarray,
     forecast_length: int,
-    rolling_window: int,
     num_ic: int,
     granularity: int,
     output_dir: str,
+    seed: int = 0,
 ):
     stats = _init_stats()
     try:
@@ -115,57 +115,64 @@ def run_model_benchmarks(
             for context_length in context_lengths:
                 metrics = _init_metric_buffers()
 
-                for i in range(
-                    0, len(traj) - context_length - forecast_length, rolling_window
-                ):
-                    if i < rolling_window * num_ic:
-                        traj_context = traj[i : i + context_length, :]
-                        traj_true = traj[
-                            i + context_length : i + context_length + forecast_length, :
-                        ]
+                # Sample num_ic random ICs across the full trajectory.
+                # Seeded per (equation, context_length) so results are reproducible
+                # but the IC set varies across the parameter sweep.
+                rng = np.random.default_rng(
+                    seed + hash((equation_name, int(context_length))) % (2**31)
+                )
+                max_start = len(traj) - context_length - forecast_length
+                ic_starts = rng.integers(0, max_start, size=num_ic)
 
-                        traj_pred_full = model.forecast(traj_context, forecast_length)
-                        traj_pred_full = _ensure_2d(traj_pred_full)
+                for i in ic_starts:
+                    i = int(i)
+                    traj_context = traj[i : i + context_length, :]
+                    traj_true = traj[
+                        i + context_length : i + context_length + forecast_length, :
+                    ]
 
-                        for dim in range(traj_true.shape[1]):
-                            traj_pred = traj_pred_full[:, dim]
+                    traj_pred_full = model.forecast(traj_context, forecast_length)
+                    traj_pred_full = _ensure_2d(traj_pred_full)
 
-                            vpt = vpt_smape(traj_pred, traj_true[:, dim]) / granularity
-                            smape_val = np.array(
-                                smape_rolling(traj_true[:, dim], traj_pred)
-                            )
+                    for dim in range(traj_true.shape[1]):
+                        traj_pred = traj_pred_full[:, dim]
 
-                            metrics["vpt"].append(vpt)
-                            metrics["smape"].append(smape_val)
-
-                            mse_val = mse_rolling(traj_true[:, dim], traj_pred)
-                            metrics["mse"].append(mse_val)
-
-                            mae_val = mae_rolling(traj_true[:, dim], traj_pred)
-                            metrics["mae"].append(mae_val)
-
-                        vpt = (
-                            vpt_smape(traj_pred_full.squeeze(), traj_true.squeeze())
-                            / granularity
+                        vpt = vpt_smape(traj_pred, traj_true[:, dim]) / granularity
+                        smape_val = np.array(
+                            smape_rolling(traj_true[:, dim], traj_pred)
                         )
-                        smape_val = np.array(smape_rolling(traj_true, traj_pred_full))
-                        metrics["vpt_2"].append(vpt)
-                        metrics["smape_2"].append(smape_val)
 
-                        kl_dist = estimate_kl_divergence(traj_true, traj_pred_full)
-                        if np.isinf(kl_dist):
-                            kl_dist = np.nan
-                        metrics["kl"].append(kl_dist)
+                        metrics["vpt"].append(vpt)
+                        metrics["smape"].append(smape_val)
 
-                        with warnings.catch_warnings():
-                            warnings.filterwarnings(
-                                "ignore",
-                                category=RuntimeWarning,
-                                module="scipy",
-                            )
-                            cdim_pred = gp_dim(traj_pred_full)
-                            cdim_true = gp_dim(traj_true)
-                        metrics["cdim"].append(np.array([cdim_pred, cdim_true]))
+                        mse_val = mse_rolling(traj_true[:, dim], traj_pred)
+                        metrics["mse"].append(mse_val)
+
+                        mae_val = mae_rolling(traj_true[:, dim], traj_pred)
+                        metrics["mae"].append(mae_val)
+
+                    vpt = (
+                        vpt_smape(traj_pred_full.squeeze(), traj_true.squeeze())
+                        / granularity
+                    )
+                    smape_val = np.array(smape_rolling(traj_true, traj_pred_full))
+                    metrics["vpt_2"].append(vpt)
+                    metrics["smape_2"].append(smape_val)
+
+                    kl_dist = estimate_kl_divergence(traj_true, traj_pred_full)
+                    if np.isinf(kl_dist):
+                        kl_dist = np.nan
+                    metrics["kl"].append(kl_dist)
+
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings(
+                            "ignore",
+                            category=RuntimeWarning,
+                            module="scipy",
+                        )
+                        cdim_pred = gp_dim(traj_pred_full)
+                        cdim_true = gp_dim(traj_true)
+                    metrics["cdim"].append(np.array([cdim_pred, cdim_true]))
 
                 key = (equation_name, context_length)
                 _store_metric(stats, "vpt", key, metrics["vpt"])
@@ -225,8 +232,8 @@ def main():
     granularity = 30
     context_lengths = 2 ** np.arange(6, 11)
     forecast_length = 300
-    rolling_window = context_lengths[-1]
     num_ic = 20
+    seed = 0
 
     ## Older trajectory directory
     # trajectory_glob = os.path.join(root_dir, "data", "long_trajectories", "*.npy")
@@ -241,8 +248,8 @@ def main():
             trajectory_glob=trajectory_glob,
             context_lengths=context_lengths,
             forecast_length=forecast_length,
-            rolling_window=rolling_window,
             num_ic=num_ic,
+            seed=seed,
             granularity=granularity,
             output_dir=output_dir,
         )
