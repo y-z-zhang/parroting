@@ -76,6 +76,7 @@ def run_model_benchmarks(
     granularity: int,
     output_dir: str,
     seed: int = 0,
+    equations: Iterable[str] | None = None,
 ):
     stats = _init_stats()
     try:
@@ -83,9 +84,12 @@ def run_model_benchmarks(
     except (ImportError, OSError) as e:
         print(f"{model_name}: skipping (failed to load: {e})", flush=True)
         return
-    
+
+    eq_filter = set(equations) if equations else None
     for trajectory in sorted(glob.glob(trajectory_glob)):
         equation_name = os.path.basename(trajectory).split(".")[0]
+        if eq_filter is not None and equation_name not in eq_filter:
+            continue
         print(f"{model_name}: {equation_name}", flush=True)
 
         traj = np.load(trajectory, allow_pickle=True)
@@ -227,6 +231,10 @@ def _parse_args():
         "--output-suffix", type=str, default="",
         help="Suffix appended to each output dir name (e.g. '_CL512').",
     )
+    parser.add_argument(
+        "--equations", nargs="+", default=None,
+        help="Subset of equation names to process (default: all in trajectory dir).",
+    )
     return parser.parse_args()
 
 
@@ -273,6 +281,7 @@ def main():
             seed=seed,
             granularity=granularity,
             output_dir=output_dir,
+            equations=args.equations,
         )
 
 
