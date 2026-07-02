@@ -13,8 +13,11 @@ generates naive forecasts by copying contiguous sequences of context points.
 | `models/` | The context parroting model (`parrot.py`), including the simplex variant. |
 | `demo/` | Minimal end-to-end demo of context parroting on a Lorenz trajectory (`context_parroting_demo.ipynb`). |
 | `data/` | Test datasets used by the benchmarks. See [Datasets](#datasets) below. |
-| `benchmark/` | Benchmarking driver, model registry, metrics, and analysis notebooks. See [Benchmarks](#benchmarks). |
-| `analysis/` | Saved benchmark statistics and figures used in the paper. |
+| `benchmark/` | Benchmarking driver, model registry, metrics, benchmark notebooks, and results. See [Benchmarks](#benchmarks). |
+| `analysis/` | Figure notebooks and the statistics they read; see [`analysis/README.md`](analysis/README.md). |
+
+Superseded material lives in `benchmark/legacy/` and `analysis/legacy/`, each
+with a README explaining what it is and what replaced it.
 
 ## Datasets
 
@@ -40,43 +43,56 @@ The unified driver runs any model in the registry against the full dysts dataset
 # Run all models
 python benchmark/run_dysts_benchmarks.py
 
-# Run specific models only
-python benchmark/run_dysts_benchmarks.py chronos timemoe
+# Run specific models at a single context length
+python benchmark/run_dysts_benchmarks.py chronos timemoe --context-lengths 512
+
+# Split one slow model across parallel processes
+python benchmark/run_dysts_benchmarks.py chronos --equations Lorenz Rossler --output-suffix _chunk0
 
 # Available models: arima, chronos, chronos_bolt, dynamix, moirai2, panda_patchtst,
-#                   parrot, simplex, timemoe, timesfm
+#                   parrot, simplex, timemoe, timesfm (2.0, paper version), timesfm_2p5
 ```
 
-Results are written to `benchmark/benchmark_results/<model>_dysts/`.
+Results are written to `benchmark/benchmark_results/<model>_dysts/` as
+`{average,median}_{vpt,smape,vpt_2,smape_2,cdim,kl,mse,mae}.npy`, each a dict
+keyed by `(equation_name, context_length)`.
 [`benchmark/forecast_models.py`](benchmark/forecast_models.py) is the model registry —
-add a new model by subclassing `ForecastModel` and registering it.
+add a new model by subclassing `ForecastModel` and registering it. DynaMix
+additionally requires cloning
+[DynaMix-python](https://github.com/DurstewitzLab/DynaMix-python) into
+`benchmark/DynaMix/`.
 
-The benchmarks can also be run with `uv`, which is recommended given the
-overlapping-but-incompatible dependencies of the various foundation models:
+The benchmarks can also be run with `uv`:
 
 ```bash
 uv run python benchmark/run_dysts_benchmarks.py
 ```
 
-### Initial-condition sampling
+### Conventions (important for comparing numbers)
 
-For each `(equation, context_length)` pair, the driver samples `num_ic=20` random
-initial-condition starts uniformly across the full trajectory, using a deterministic
-seed so runs are reproducible. To change the seed or number of ICs, edit `main()` in
-[`benchmark/run_dysts_benchmarks.py`](benchmark/run_dysts_benchmarks.py).
+- **sMAPE** is on the 0–200 scale (predicting the mean of white noise gives
+  ~200), defined locally in [`benchmark/metrics.py`](benchmark/metrics.py).
+  It is deliberately *not* imported from dysts, whose default switched to a
+  0–100 scale in April 2025 — numbers produced against the wrong convention
+  are silently half-sized (see `analysis/legacy/README.md` for a cautionary
+  example).
+- **Initial conditions**: for each `(equation, context_length)` pair the driver
+  samples `num_ic` (default 20) starts uniformly across the full trajectory
+  with a deterministic per-pair seed, so runs are reproducible and unbiased.
 
-### Notebooks under `benchmark/`
+### Contents of `benchmark/`
 
-| Notebook | Purpose |
+| Item | Purpose |
 |---|---|
-| `benchmark_plotting.ipynb` | Generates the comparison figures from saved `benchmark_results/`. |
-| `benchmark_ChronosBolt_normalized.ipynb` | Reference implementation of the ChronosBolt benchmark loop (matches the script's results when seeded the same way — see [`diagnostics/`](benchmark/diagnostics/)). |
-| `benchmark_Dynamix_dysts_forecast_models.ipynb` | DynaMix benchmark using the unified `forecast_models.py` interface. |
-| `benchmark_arima.ipynb`, `benchmark_panda.ipynb`, `benchmark_parrot_dysts.ipynb`, `benchmark_simplex.ipynb` | Per-model exploratory notebooks. |
-| `benchmark_SciML.ipynb`, `benchmark_Dynamix_SciML.ipynb`, `benchmark_Moirai_SciML.ipynb` | Benchmarks on SciML datasets (not covered by the dysts driver). |
-| `benchmark_vary_context.ipynb`, `benchmark_long_rollouts.ipynb`, `benchmark_longhorizon.ipynb`, `invariant_properties_longhorizons.ipynb` | Special-purpose analyses. |
-| `legacy/` | Older per-model `_dysts.ipynb` notebooks predating the unified driver. Kept for reference. |
-| `diagnostics/` | Scripts that validate the script and notebook pipelines compute the same metrics on identical inputs, and quantify IC-sampling variance. |
+| `run_dysts_benchmarks.py` | The benchmark driver (see `--help`). |
+| `forecast_models.py` | Model registry with a unified `forecast(context, horizon)` interface. |
+| `metrics.py`, `utils.py` | sMAPE/VPT/MSE/MAE metric implementations. |
+| `benchmark_results/` | Driver output: the Fig. 2 data (all seven models, CL=512, unified protocol). |
+| `benchmark_plotting.ipynb` | Comparison figures from `benchmark_results/`. |
+| `benchmark_SciML.ipynb`, `benchmark_Dynamix_SciML.ipynb`, `benchmark_Moirai_SciML.ipynb` | Benchmarks on the SciML datasets (turbulence, ECG, circuits, ...). |
+| `benchmark_vary_context.ipynb`, `benchmark_long_rollouts.ipynb`, `benchmark_longhorizon.ipynb`, `invariant_properties_longhorizons.ipynb` | Context-length scaling, long-rollout, and invariant-property analyses. |
+| `diagnostics/` | Validation scripts: notebook-vs-driver equivalence, IC-sampling variance, chunk merging. |
+| `legacy/` | Superseded per-model notebooks and the previous generation of results. |
 
 ## Reference
 

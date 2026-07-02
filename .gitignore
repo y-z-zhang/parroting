@@ -25,6 +25,9 @@ private_parroting/
 # Diagnostic outputs (regeneratable)
 benchmark/diagnostics/*_results.npz
 
+# Benchmark run logs
+benchmark/run_logs/
+
 # Large data dumps/forecast dumps
 analysis/fig_resources/
 fig_resources/*
