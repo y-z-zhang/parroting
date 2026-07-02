@@ -1,5 +1,18 @@
 import numpy as np
-from dysts.metrics import smape
+
+
+def smape(x, y, eps=1e-10):
+    """Symmetric mean absolute percentage error on the 0-200 scale.
+
+    Defined locally rather than imported from dysts: the paper reports sMAPE
+    on the 0-200 convention (white noise ~ 200), but dysts rescaled its
+    default to 0-100 in April 2025 (GilpinLab/dysts@4b4d9de), so the imported
+    version silently halves every sMAPE-derived metric depending on which
+    dysts snapshot is installed.
+    """
+    x = np.asarray(x)
+    y = np.asarray(y)
+    return 200 * np.mean(np.abs(x - y) / (np.abs(x) + np.abs(y) + eps))
 
 # def smape_rolling(ts1, ts2):
 #     """Return the smape versus time for two time series."""
